@@ -77,25 +77,3 @@
   </script>
 </body>
 </html>
-```
-
----
-
-## В Make нужно обработать Web App Data:
-
-### В Router добавьте новый путь:
-
-**Путь: Получение даты рождения из Web App**
-
-**Фильтр**: `{{1.message.web_app_data.data}}` exists
-
-**Модуль 1: Tools → Set Variable**
-```
-birthdate: {{1.message.web_app_data.data}}
-```
-
-**Модуль 2: Telegram Bot → Send a Text Message**
-```
-✅ Дата рождения сохранена: {{birthdate}}
-
-Вам полных лет: {{floor(dateDifference(now; parseDate(birthdate; "YYYY-MM-DD"); "years"))}}
