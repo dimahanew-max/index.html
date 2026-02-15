@@ -1,20 +1,101 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: var(--tg-theme-bg-color);
+      color: var(--tg-theme-text-color);
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      background: var(--tg-theme-button-color);
+      color: var(--tg-theme-button-text-color);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <h2>Выберите дату рождения:</h2>
   <input type="date" id="birthdate" max="2010-12-31" min="1940-01-01">
-  <button onclick="sendDate()">Отправить</button>
+  <button id="sendBtn">Отправить</button>
   
   <script>
-    function sendDate() {
-      const date = document.getElementById('birthdate').value;
-      Telegram.WebApp.sendData(date);
-      Telegram.WebApp.close();
-    }
+    // Инициализация Telegram Web App
+    let tg = window.Telegram.WebApp;
+    tg.expand(); // Раскрываем на весь экран
+    
+    const sendBtn = document.getElementById('sendBtn');
+    const birthdateInput = document.getElementById('birthdate');
+    
+    // Показываем MainButton (нативная кнопка Telegram)
+    tg.MainButton.text = "Отправить дату";
+    tg.MainButton.show();
+    
+    // Обработчик для нативной кнопки Telegram
+    tg.MainButton.onClick(function() {
+      const date = birthdateInput.value;
+      if (date) {
+        tg.sendData(date); // Отправляем данные боту
+      } else {
+        tg.showAlert("Пожалуйста, выберите дату");
+      }
+    });
+    
+    // Обработчик для обычной кнопки (запасной вариант)
+    sendBtn.addEventListener('click', function() {
+      const date = birthdateInput.value;
+      if (date) {
+        tg.sendData(date);
+      } else {
+        tg.showAlert("Пожалуйста, выберите дату");
+      }
+    });
+    
+    // Включаем кнопку только когда дата выбрана
+    birthdateInput.addEventListener('change', function() {
+      if (this.value) {
+        tg.MainButton.enable();
+      }
+    });
   </script>
 </body>
 </html>
+```
+
+---
+
+## В Make нужно обработать Web App Data:
+
+### В Router добавьте новый путь:
+
+**Путь: Получение даты рождения из Web App**
+
+**Фильтр**: `{{1.message.web_app_data.data}}` exists
+
+**Модуль 1: Tools → Set Variable**
+```
+birthdate: {{1.message.web_app_data.data}}
+```
+
+**Модуль 2: Telegram Bot → Send a Text Message**
+```
+✅ Дата рождения сохранена: {{birthdate}}
+
+Вам полных лет: {{floor(dateDifference(now; parseDate(birthdate; "YYYY-MM-DD"); "years"))}}
