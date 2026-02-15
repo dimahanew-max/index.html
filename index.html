@@ -1,171 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Выбор даты рождения</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body {
-      font-family: -apple-system, system-ui, sans-serif;
-      padding: 20px;
-      background: var(--tg-theme-bg-color, #fff);
-      color: var(--tg-theme-text-color, #000);
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+      background: #f4f4f4;
     }
-    input { width: 100%; padding: 15px; font-size: 18px; margin: 10px 0; border: 2px solid #2481cc; border-radius: 8px; }
-    .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px; overflow-x: auto; }
-    .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
-    .success { background: #d4edda; color: #155724; }
-    .error { background: #f8d7da; color: #721c24; }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background: #2AABEE;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
-  <h2>🔍 Диагностика Web App</h2>
-  
-  <div id="info" class="log">Загрузка...</div>
-  
-  <input type="date" id="birthdate" max="2010-12-31" min="1940-01-01">
-  
-  <div id="status"></div>
-  
-  <script>
-    const infoDiv = document.getElementById('info');
-    const statusDiv = document.getElementById('status');
-    const birthdateInput = document.getElementById('birthdate');
-    
-    function log(message, isError = false) {
-      const time = new Date().toLocaleTimeString();
-      const logEntry = `[${time}] ${message}`;
-      console.log(logEntry);
-      infoDiv.innerHTML += logEntry + '<br>';
-      if (isError) {
-        infoDiv.style.background = '#f8d7da';
-      }
-    }
-    
-    function showStatus(message, isSuccess) {
-      statusDiv.innerHTML = message;
-      statusDiv.className = 'status ' + (isSuccess ? 'success' : 'error');
-    }
-    
-    log('📱 Скрипт запущен');
-    
-    // Проверяем наличие Telegram WebApp
-    if (!window.Telegram || !window.Telegram.WebApp) {
-      log('❌ ОШИБКА: Telegram.WebApp не найден!', true);
-      showStatus('❌ Ошибка: это не Telegram Web App', false);
-    } else {
-      const tg = window.Telegram.WebApp;
-      
-      log('✅ Telegram.WebApp найден');
-      log('Версия: ' + tg.version);
-      log('Платформа: ' + tg.platform);
-      log('initData: ' + (tg.initData ? 'есть' : 'нет'));
-      log('initDataUnsafe: ' + JSON.stringify(tg.initDataUnsafe));
-      
-      // Инициализация
-      try {
-        tg.ready();
-        log('✅ tg.ready() выполнен');
-      } catch(e) {
-        log('❌ Ошибка tg.ready(): ' + e.message, true);
-      }
-      
-      try {
-        tg.expand();
-        log('✅ tg.expand() выполнен');
-      } catch(e) {
-        log('❌ Ошибка tg.expand(): ' + e.message, true);
-      }
-      
-      // Настройка MainButton
-      try {
-        tg.MainButton.setText("ОТПРАВИТЬ ДАТУ");
-        tg.MainButton.color = "#2481cc";
-        tg.MainButton.textColor = "#ffffff";
-        tg.MainButton.show();
-        log('✅ MainButton настроен и показан');
-      } catch(e) {
-        log('❌ Ошибка настройки MainButton: ' + e.message, true);
-      }
-      
-      // Обработчик изменения даты
-      birthdateInput.addEventListener('change', function() {
-        log('📅 Дата выбрана: ' + this.value);
-        if (this.value) {
-          tg.MainButton.enable();
-          log('✅ MainButton активирован');
-        }
-      });
-      
-      // Обработчик нажатия MainButton
-      tg.MainButton.onClick(function() {
-        const date = birthdateInput.value;
-        
-        log('🔘 MainButton нажат');
-        log('Выбранная дата: ' + date);
-        
-        if (!date) {
-          log('⚠️ Дата не выбрана', true);
-          try {
-            tg.showAlert("Пожалуйста, выберите дату");
-          } catch(e) {
-            alert("Выберите дату!");
-          }
+
+<h2>Выберите дату рождения</h2>
+
+<input type="date" id="birthdate" max="" />
+
+<br>
+
+<button onclick="sendData()">Продолжить</button>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.expand();
+
+  // Ограничение: нельзя выбрать будущую дату
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById("birthdate").setAttribute("max", today);
+
+  function sendData() {
+      const date = document.getElementById("birthdate").value;
+
+      if (!date) {
+          alert("Пожалуйста, выберите дату");
           return;
-        }
-        
-        showStatus('📤 Отправка данных: ' + date, true);
-        log('📤 Попытка отправки данных: ' + date);
-        
-        try {
-          // Пробуем sendData
-          tg.sendData(date);
-          log('✅ tg.sendData() вызван успешно');
-          showStatus('✅ Данные отправлены: ' + date, true);
-          
-          // Закрываем через 500мс
-          setTimeout(function() {
-            log('🚪 Попытка закрыть Web App');
-            try {
-              tg.close();
-              log('✅ tg.close() выполнен');
-            } catch(e) {
-              log('❌ Ошибка tg.close(): ' + e.message, true);
-            }
-          }, 500);
-          
-        } catch(e) {
-          log('❌ ОШИБКА sendData: ' + e.message, true);
-          showStatus('❌ Ошибка отправки: ' + e.message, false);
-        }
-      });
-      
-      log('✅ Все обработчики установлены');
-      showStatus('✅ Web App готов к работе', true);
-    }
-  </script>
+      }
+
+      const payload = {
+          type: "birthdate",
+          value: date,
+          user_id: tg.initDataUnsafe?.user?.id || null
+      };
+
+      tg.sendData(JSON.stringify(payload));
+      tg.close();
+  }
+</script>
+
 </body>
 </html>
-```
-
----
-
-## Загрузите это на Vercel и протестируйте
-
-1. Замените файл на Vercel этим кодом
-2. Откройте Web App в Telegram
-3. Выберите дату
-4. Нажмите "ОТПРАВИТЬ ДАТУ"
-5. **Сделайте скриншот** всего что написано в разделе "🔍 Диагностика Web App"
-6. Пришлите мне этот скриншот
-
----
-
-## Также проверьте в Make:
-
-Добавьте **временный модуль для отладки** сразу после Webhook:
-
-**Tools → Set Variable**
-```
-webhook_debug: {{toString(1)}}
-message_type: {{if(exists(1.message.web_app_data); "web_app_data"; if(exists(1.message.text); "text"; if(exists(1.callback_query); "callback"; "unknown")))}}
