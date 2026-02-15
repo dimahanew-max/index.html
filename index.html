@@ -1,84 +1,147 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Выбор даты рождения</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 30px;
-      background: #f4f4f4;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Выбор даты рождения</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-button-color: #3390ec;
+            --tg-theme-button-text-color: #ffffff;
+        }
 
-    h2 {
-      margin-bottom: 20px;
-    }
+        body {
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
 
-    input {
-      padding: 10px;
-      font-size: 16px;
-      margin-bottom: 20px;
-    }
+        .container {
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+        }
 
-    button {
-      background: #2AABEE;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+        h2 {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
 
-    button:hover {
-      opacity: 0.9;
-    }
-  </style>
+        input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--tg-theme-button-color);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            outline: none;
+            background: white;
+            color: black;
+            box-sizing: border-box;
+        }
+
+        #sendBtn {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        #sendBtn:active {
+            opacity: 0.7;
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            opacity: 0.6;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
 
-<h2>Выберите дату рождения</h2>
+    <div class="container">
+        <h2>Укажите дату рождения</h2>
+        
+        <input type="date" id="birthDate" min="1950-01-01" max="2020-12-31">
+        
+        <button id="sendBtn">Подтвердить</button>
+        
+        <p class="hint">Данные будут переданы боту автоматически</p>
+    </div>
 
-<input type="date" id="birthdate" max="" />
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Разворачиваем приложение на весь экран
 
-<br>
+        // Настройка цветов под тему Telegram (темная/светлая)
+        document.body.style.backgroundColor = tg.themeParams.bg_color || '#ffffff';
+        document.body.style.color = tg.themeParams.text_color || '#000000';
 
-<button onclick="sendData()">Продолжить</button>
+        // Получаем user_id из URL параметров
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user_id');
 
-<script>
-  const tg = window.Telegram.WebApp;
-  tg.expand();
+        const sendBtn = document.getElementById('sendBtn');
+        const dateInput = document.getElementById('birthDate');
 
-  // Ограничение: нельзя выбрать будущую дату
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById("birthdate").setAttribute("max", today);
+        sendBtn.addEventListener('click', async () => {
+            const selectedDate = dateInput.value;
 
-  function sendData() {
-    const tg = window.Telegram.WebApp;
-    const date = document.getElementById("birthdate").value;
+            if (!selectedDate) {
+                tg.showAlert("Пожалуйста, выберите дату!");
+                return;
+            }
 
-    console.log("Telegram object:", tg);
+            // Визуальный фидбек — меняем текст кнопки
+            sendBtn.innerText = "Отправка...";
+            sendBtn.disabled = true;
 
-    if (!tg) {
-        alert("Telegram WebApp не обнаружен");
-        return;
-    }
+            try {
+                // ОТПРАВКА НА MAKE.COM
+                // ЗАМЕНИ ССЫЛКУ НИЖЕ НА СВОЙ WEBHOOK URL ИЗ ШАГА 1
+                const MAKE_WEBHOOK_URL = 'https://hook.eu2.make.com/belq8an0rdnmlhw9jrogkgrbcj3udbn9';
 
-    if (!date) {
-        alert("Выберите дату");
-        return;
-    }
+                await fetch(MAKE_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        birth_date: selectedDate,
+                        source: "telegram_mini_app"
+                    })
+                });
 
-    tg.sendData(JSON.stringify({
-        type: "birthdate",
-        value: date
-    }));
+                // Закрываем Mini App через 500мс после успешной отправки
+                setTimeout(() => {
+                    tg.close();
+                }, 500);
 
-    tg.close();
-}
-</script>
-
+            } catch (error) {
+                tg.showAlert("Ошибка при отправке данных. Попробуйте еще раз.");
+                sendBtn.innerText = "Подтвердить";
+                sendBtn.disabled = false;
+            }
+        });
+    </script>
 </body>
 </html>
