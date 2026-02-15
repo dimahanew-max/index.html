@@ -6,74 +6,81 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       padding: 20px;
-      background: var(--tg-theme-bg-color);
-      color: var(--tg-theme-text-color);
+      margin: 0;
+      background: var(--tg-theme-bg-color, #ffffff);
+      color: var(--tg-theme-text-color, #000000);
     }
-    input {
+    h2 {
+      margin-top: 0;
+      font-size: 20px;
+    }
+    input[type="date"] {
       width: 100%;
       padding: 12px;
       font-size: 16px;
-      margin: 10px 0;
+      margin: 15px 0;
       border: 1px solid #ccc;
       border-radius: 8px;
+      box-sizing: border-box;
     }
-    button {
-      width: 100%;
-      padding: 15px;
-      font-size: 16px;
-      background: var(--tg-theme-button-color);
-      color: var(--tg-theme-button-text-color);
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+    .hint {
+      color: #999;
+      font-size: 14px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <h2>Выберите дату рождения:</h2>
+  <h2>Укажите дату рождения</h2>
   <input type="date" id="birthdate" max="2010-12-31" min="1940-01-01">
-  <button id="sendBtn">Отправить</button>
+  <div class="hint">После выбора даты нажмите кнопку внизу экрана</div>
   
   <script>
-    // Инициализация Telegram Web App
-    let tg = window.Telegram.WebApp;
-    tg.expand(); // Раскрываем на весь экран
+    // Получаем объект Telegram Web App
+    const tg = window.Telegram.WebApp;
     
-    const sendBtn = document.getElementById('sendBtn');
+    // Раскрываем на весь экран
+    tg.expand();
+    
+    // Готовим Web App
+    tg.ready();
+    
     const birthdateInput = document.getElementById('birthdate');
     
-    // Показываем MainButton (нативная кнопка Telegram)
-    tg.MainButton.text = "Отправить дату";
-    tg.MainButton.show();
+    // Настраиваем главную кнопку
+    tg.MainButton.setText("Отправить");
+    tg.MainButton.color = "#2481cc";
     
-    // Обработчик для нативной кнопки Telegram
-    tg.MainButton.onClick(function() {
-      const date = birthdateInput.value;
-      if (date) {
-        tg.sendData(date); // Отправляем данные боту
-      } else {
-        tg.showAlert("Пожалуйста, выберите дату");
-      }
-    });
-    
-    // Обработчик для обычной кнопки (запасной вариант)
-    sendBtn.addEventListener('click', function() {
-      const date = birthdateInput.value;
-      if (date) {
-        tg.sendData(date);
-      } else {
-        tg.showAlert("Пожалуйста, выберите дату");
-      }
-    });
-    
-    // Включаем кнопку только когда дата выбрана
+    // Показываем кнопку только когда дата выбрана
     birthdateInput.addEventListener('change', function() {
       if (this.value) {
+        tg.MainButton.show();
         tg.MainButton.enable();
+      } else {
+        tg.MainButton.hide();
       }
     });
+    
+    // Обработчик нажатия на MainButton
+    tg.MainButton.onClick(function() {
+      const date = birthdateInput.value;
+      
+      if (!date) {
+        tg.showAlert("Пожалуйста, выберите дату");
+        return;
+      }
+      
+      // Отправляем данные боту
+      tg.sendData(date);
+    });
+    
+    // Автофокус на поле ввода
+    setTimeout(() => {
+      birthdateInput.focus();
+      birthdateInput.click();
+    }, 300);
   </script>
 </body>
 </html>
