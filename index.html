@@ -56,22 +56,28 @@
   document.getElementById("birthdate").setAttribute("max", today);
 
   function sendData() {
-      const date = document.getElementById("birthdate").value;
+    const tg = window.Telegram.WebApp;
+    const date = document.getElementById("birthdate").value;
 
-      if (!date) {
-          alert("Пожалуйста, выберите дату");
-          return;
-      }
+    console.log("Telegram object:", tg);
 
-      const payload = {
-          type: "birthdate",
-          value: date,
-          user_id: tg.initDataUnsafe?.user?.id || null
-      };
+    if (!tg) {
+        alert("Telegram WebApp не обнаружен");
+        return;
+    }
 
-      tg.sendData(JSON.stringify(payload));
-      tg.close();
-  }
+    if (!date) {
+        alert("Выберите дату");
+        return;
+    }
+
+    tg.sendData(JSON.stringify({
+        type: "birthdate",
+        value: date
+    }));
+
+    tg.close();
+}
 </script>
 
 </body>
