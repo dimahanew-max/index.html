@@ -68,6 +68,11 @@
             opacity: 0.7;
         }
 
+        #sendBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .hint {
             font-size: 0.8rem;
             opacity: 0.6;
@@ -80,7 +85,7 @@
     <div class="container">
         <h2>Укажите дату рождения</h2>
         
-        <input type="date" id="birthDate" min="1950-01-01" max="2020-12-31">
+        <input type="date" id="birthDate" min="1950-01-01" max="2010-12-31">
         
         <button id="sendBtn">Подтвердить</button>
         
@@ -89,15 +94,23 @@
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачиваем приложение на весь экран
+        tg.expand();
+        tg.ready();
 
-        // Настройка цветов под тему Telegram (темная/светлая)
+        // Настройка цветов под тему Telegram
         document.body.style.backgroundColor = tg.themeParams.bg_color || '#ffffff';
         document.body.style.color = tg.themeParams.text_color || '#000000';
 
-        // Получаем user_id из URL параметров
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('user_id');
+        // ИСПРАВЛЕНО: Получаем user_id из Telegram WebApp API
+        const userId = tg.initDataUnsafe?.user?.id || null;
+        const userName = tg.initDataUnsafe?.user?.username || 'unknown';
+        const userFirstName = tg.initDataUnsafe?.user?.first_name || '';
+        const userLastName = tg.initDataUnsafe?.user?.last_name || '';
+
+        // Логирование для отладки
+        console.log('User ID:', userId);
+        console.log('Username:', userName);
+        console.log('User data:', tg.initDataUnsafe.user);
 
         const sendBtn = document.getElementById('sendBtn');
         const dateInput = document.getElementById('birthDate');
@@ -110,38 +123,63 @@
                 return;
             }
 
-            // Визуальный фидбек — меняем текст кнопки
+            if (!userId) {
+                tg.showAlert("Ошибка: не удалось определить пользователя. Попробуйте перезапустить бота.");
+                return;
+            }
+
+            // Визуальный фидбек
             sendBtn.innerText = "Отправка...";
             sendBtn.disabled = true;
 
             try {
-                // ОТПРАВКА НА MAKE.COM
-                // ЗАМЕНИ ССЫЛКУ НИЖЕ НА СВОЙ WEBHOOK URL ИЗ ШАГА 1
+                // ВАЖНО: Замените на ваш webhook URL из Make
                 const MAKE_WEBHOOK_URL = 'https://hook.eu2.make.com/belq8an0rdnmlhw9jrogkgrbcj3udbn9';
 
-                await fetch(MAKE_WEBHOOK_URL, {
+                const response = await fetch(MAKE_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         user_id: userId,
+                        username: userName,
+                        first_name: userFirstName,
+                        last_name: userLastName,
                         birth_date: selectedDate,
-                        source: "telegram_mini_app"
+                        source: "telegram_mini_app",
+                        timestamp: Date.now()
                     })
                 });
 
-                // Закрываем Mini App через 500мс после успешной отправки
-                setTimeout(() => {
-                    tg.close();
-                }, 500);
+                if (response.ok) {
+                    // Показываем popup об успехе
+                    tg.showPopup({
+                        title: "✅ Готово!",
+                        message: "Дата рождения успешно сохранена",
+                        buttons: [{type: "ok"}]
+                    });
+
+                    // Закрываем Web App через секунду
+                    setTimeout(() => {
+                        tg.close();
+                    }, 1000);
+                } else {
+                    throw new Error('Server returned error: ' + response.status);
+                }
 
             } catch (error) {
-                tg.showAlert("Ошибка при отправке данных. Попробуйте еще раз.");
+                console.error('Fetch error:', error);
+                tg.showAlert("Ошибка при отправке данных. Проверьте интернет и попробуйте еще раз.");
                 sendBtn.innerText = "Подтвердить";
                 sendBtn.disabled = false;
             }
         });
+
+        // Автофокус на поле даты (опционально)
+        setTimeout(() => {
+            dateInput.focus();
+        }, 300);
     </script>
 </body>
 </html>
